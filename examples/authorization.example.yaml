@@ -1,0 +1,14 @@
+# Authorization record — PROOF the scan is permitted.
+# The gate refuses to run if this is missing, unsigned, undated, or expired.
+# Copy to config/authorization.yaml and fill in from the signed SoW / RoE.
+
+engagement: "Acme Q4 External VAPT"
+client: "Acme Corp"
+authorized_by: "Jane Doe, CISO"      # named client-side approver
+contact_email: "security@acme.example"
+signoff_reference: "SOW-2026-0042"    # contract / ticket / SoW reference
+valid_from: 2026-10-20
+valid_until: 2026-11-20
+rules_of_engagement: >
+  Testing permitted 09:00-17:00 local, business days only. No denial-of-service
+  testing. Report any critical finding to the contact within 4 hours.

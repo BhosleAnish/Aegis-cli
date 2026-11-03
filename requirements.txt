@@ -1,0 +1,18 @@
+# Python runtime dependencies (the core is otherwise stdlib-only)
+PyYAML>=6.0
+defusedxml>=0.7.1   # safe parsing of nmap XML (guards XXE / entity-expansion)
+
+# --- Optional: PDF report export (`--pdf`) ---
+# pip install markdown xhtml2pdf        (or: pip install "aegis-cli[pdf]")
+
+# --- External OSS tools the adapters shell out to (install separately, on PATH) ---
+# Each adapter degrades gracefully if its binary is not found — run `aegis doctor`
+# to see what is installed.
+#   nmap    : https://nmap.org/                               (ports/services/versions)
+#   httpx   : https://github.com/projectdiscovery/httpx       (live HTTP probing)
+#   nuclei  : https://github.com/projectdiscovery/nuclei      (vuln templates)
+#   katana  : https://github.com/projectdiscovery/katana      (crawl/discovery)
+#   gau     : https://github.com/lc/gau                       (passive URL discovery)
+#   ffuf    : https://github.com/ffuf/ffuf                    (content discovery)
+#   dalfox  : https://github.com/hahwul/dalfox                (XSS, active)
+#   bandit / semgrep / gitleaks / gosec / trivy               (SAST / secrets / deps)

@@ -1,0 +1,20 @@
+# Scope definition — what is IN BOUNDS for this engagement.
+# Copy to config/scope.yaml and edit. Anything not in `include` (or listed in
+# `exclude`) is blocked by the gate and never scanned.
+
+include:
+  - 192.0.2.0/24        # example client subnet (TEST-NET-1, RFC 5737)
+  - 198.51.100.10       # a single host
+  - app.staging.example.com
+
+exclude:
+  - 192.0.2.1           # gateway — do not touch
+  - 192.0.2.53          # shared DNS appliance
+
+# Optional: restrict to specific ports (omit for full default scan)
+allowed_ports: [22, 80, 443, 8080, 8443]
+
+# Optional: cap packet rate (passed to nmap --max-rate / nuclei -rate-limit)
+max_rate: 500
+
+notes: "Staging environment only. Production is explicitly out of scope."
