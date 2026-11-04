@@ -28,10 +28,25 @@ from ..models import Finding, Severity
 
 OSV_API = "https://api.osv.dev"
 
-# OSV ecosystems we resolve confidently. Conservative on purpose: a wrong
-# ecosystem yields wrong matches, so unknowns are left unmatched.
+# OS-name substring -> OSV ecosystem. Order matters (first match wins), so
+# derivatives map to their base distro's ecosystem: Kali/Parrot/Raspbian ->
+# Debian, Mint/Pop!_OS/elementary -> Ubuntu. OSV accepts the bare, capitalized
+# ecosystem ("Debian"/"Ubuntu"/"Alpine") and matches advisories across that
+# distro's releases — which also suits rolling distros like Kali. Conservative
+# on purpose: a wrong ecosystem yields wrong matches, so unknowns stay unmatched.
 _LINUX_ECOSYSTEM = [
-    ("ubuntu", "Ubuntu"),
+    ("ubuntu", "Ubuntu"),            # also catches kubuntu/xubuntu/lubuntu
+    ("linux mint", "Ubuntu"),
+    ("mint", "Ubuntu"),
+    ("pop!_os", "Ubuntu"),
+    ("pop os", "Ubuntu"),
+    ("elementary", "Ubuntu"),
+    ("zorin", "Ubuntu"),
+    ("kali", "Debian"),
+    ("parrot", "Debian"),
+    ("raspbian", "Debian"),
+    ("raspberry pi os", "Debian"),
+    ("devuan", "Debian"),
     ("debian", "Debian"),
     ("alpine", "Alpine"),
 ]

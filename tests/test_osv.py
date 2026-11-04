@@ -54,6 +54,38 @@ def test_windows_app_not_resolvable():
     assert resolve_ecosystem("Microsoft Windows 11 Pro", "user") is None
 
 
+def test_ecosystem_recognizes_kali_as_debian():
+    # Kali is Debian-based (dpkg) but its OS name contains neither "debian"
+    # nor "ubuntu" — it must still resolve to the Debian OSV ecosystem.
+    assert resolve_ecosystem("Kali GNU/Linux Rolling", "dpkg") == "Debian"
+
+
+def test_ecosystem_recognizes_debian_derivatives():
+    assert resolve_ecosystem("Parrot Security 6.0", "dpkg") == "Debian"
+    assert resolve_ecosystem("Raspbian GNU/Linux 12 (bookworm)", "dpkg") == "Debian"
+
+
+def test_ecosystem_recognizes_ubuntu_derivatives():
+    assert resolve_ecosystem("Linux Mint 21.3", "dpkg") == "Ubuntu"
+    assert resolve_ecosystem("Pop!_OS 22.04 LTS", "dpkg") == "Ubuntu"
+
+
+def test_derivative_still_requires_a_linux_source():
+    # a Windows-sourced app on a Kali host is still not a dpkg package
+    assert resolve_ecosystem("Kali GNU/Linux Rolling", "system") is None
+
+
+def test_match_queries_a_kali_dpkg_package(monkeypatch):
+    m = OSVMatcher()
+    m._post = lambda path, payload: {"results": [{"vulns": [{"id": VULN["id"]}]}]}
+    m._get = lambda path: VULN
+    findings, stats = m.match(
+        [{"name": "curl", "version": "7.88.1-10", "source": "dpkg"}],
+        "Kali GNU/Linux Rolling", "kali")
+    assert stats.queried == 1 and stats.unmatchable == 0
+    assert findings[0].cve == ["CVE-2021-1234"]
+
+
 # --- advisory parsing ------------------------------------------------------ #
 def test_parse_vuln_builds_finding():
     app = {"name": "libfoo", "version": "1.0.0", "source": "dpkg"}
