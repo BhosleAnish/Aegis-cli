@@ -17,6 +17,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+from .collectors import COLLECTORS_DIR
 from .git_source import GitError, cloned_repo
 from .infra import run_infra
 from .models import Credentials, Engagement, Finding, Scope
@@ -220,11 +221,11 @@ def _cmd_infra(args) -> int:
         _stderr(f"config error: {exc}")
         return 2
 
+    # Default to the collectors bundled with aegis so infra runs standalone;
+    # --agent-dir / AEGIS_AGENT_DIR / --infra-json still override.
     agent_dir = args.agent_dir or os.environ.get("AEGIS_AGENT_DIR")
     if not agent_dir and not args.infra_json:
-        _stderr("provide --agent-dir (run collectors locally) or --infra-json "
-                "(ingest inventory), or set AEGIS_AGENT_DIR")
-        return 2
+        agent_dir = str(COLLECTORS_DIR)
 
     adapter = InfraAdapter(agent_dir=agent_dir, inventory_json=args.infra_json,
                            timeout=args.timeout)
