@@ -17,6 +17,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+from .git_source import GitError, cloned_repo
 from .infra import run_infra
 from .models import Credentials, Engagement, Finding, Scope
 from .pipeline import Pipeline, write_run_artifacts
@@ -93,14 +94,18 @@ def _cmd_doctor(_args) -> int:
 
 
 def _cmd_sast(args) -> int:
-    path = Path(args.path)
-    if not path.is_dir():
-        _stderr(f"path not found or not a directory: {path}")
-        return 2
     try:
         auth = _load_authorization(args.auth)
     except (AuthorizationError, ValueError, FileNotFoundError) as exc:
         _stderr(f"config error: {exc}")
+        return 2
+
+    if getattr(args, "git", None):
+        return _sast_git(args, auth)
+
+    path = Path(args.path)
+    if not path.is_dir():
+        _stderr(f"path not found or not a directory: {path}")
         return 2
     # SAST targets a code path, not a host: the path itself is the scope.
     eng = Engagement(authorization=auth, scope=Scope(include=[str(path)]))
@@ -110,6 +115,30 @@ def _cmd_sast(args) -> int:
         _stderr(f"GATE BLOCKED: {exc}")
         return 3
     return _write_outputs(eng, report, args.out, pdf=args.pdf)
+
+
+def _sast_git(args, auth) -> int:
+    """Clone a git repo fresh into a temp dir, SAST the working tree, clean up.
+
+    Auth is delegated to git; the clone is scanned (read-only) and removed unless
+    --keep-clone is given.
+    """
+    try:
+        with cloned_repo(args.git, ref=args.ref, keep=args.keep_clone,
+                         log=_stderr) as repo:
+            notes = f"git source: {args.git}" + (f"@{repo.commit}" if repo.commit else "")
+            eng = Engagement(authorization=auth,
+                             scope=Scope(include=[str(repo.path)], notes=notes))
+            try:
+                report = run_sast(eng, str(repo.path), project=repo.project,
+                                  logger=_stderr)
+            except AuthorizationError as exc:
+                _stderr(f"GATE BLOCKED: {exc}")
+                return 3
+            return _write_outputs(eng, report, args.out, pdf=args.pdf)
+    except GitError as exc:
+        _stderr(f"git error: {exc}")
+        return 2
 
 
 def _cmd_check(args) -> int:
@@ -355,8 +384,16 @@ def build_parser() -> argparse.ArgumentParser:
     sp_check.set_defaults(func=_cmd_check)
 
     sp_sast = sub.add_parser(
-        "sast", help="static code review of a source tree (bandit, semgrep, gitleaks)")
-    sp_sast.add_argument("--path", required=True, help="path to the source tree to scan")
+        "sast",
+        help="static code review of a local tree or a git repo (bandit, semgrep, gitleaks)")
+    src = sp_sast.add_mutually_exclusive_group(required=True)
+    src.add_argument("--path", help="path to a local source tree to scan")
+    src.add_argument("--git", help="clone this git repo URL and scan it "
+                                   "(authentication is delegated to git)")
+    sp_sast.add_argument("--ref", help="branch, tag, or commit to scan with --git "
+                                       "(default: the repo's default branch)")
+    sp_sast.add_argument("--keep-clone", action="store_true",
+                         help="keep the cloned repo after scanning instead of deleting it")
     sp_sast.add_argument("--auth", required=True, help="path to authorization YAML")
     sp_sast.add_argument("--out", default="runs", help="output directory (default: runs)")
     sp_sast.add_argument("--pdf", action="store_true",
