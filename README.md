@@ -87,7 +87,7 @@ aegis <command> --scope scope.yaml --auth authorization.yaml [options]
 |---|---|
 | `aegis scan`   | Full web/network VAPT pipeline (discovery → probe → vuln) |
 | `aegis infra`  | Infrastructure analysis from host inventory (`--agent-dir` or `--infra-json`) |
-| `aegis sast`   | Static code review of a source tree (bandit / semgrep / gitleaks) |
+| `aegis sast`   | Static code review of a local tree or a git repo (bandit / semgrep / gitleaks) |
 | `aegis check`  | Validate scope + authorization without scanning |
 | `aegis doctor` | Report which external tools are installed |
 
@@ -110,8 +110,11 @@ aegis scan --scope scope.yaml --auth authorization.yaml --intensity aggressive
 aegis scan --scope scope.yaml --auth authorization.yaml \
   --mode greybox --cookie "session=..." --auth-header "Authorization: Bearer ..."
 
-# Static code review of a repo
+# Static code review of a local tree
 aegis sast --path ./my-app --auth authorization.yaml
+
+# Static code review of a git repo (cloned fresh; auth delegated to git)
+aegis sast --git https://github.com/org/my-app.git --ref main --auth authorization.yaml
 
 # Infrastructure review from a pre-collected inventory JSON, with CVE matching
 aegis infra --scope scope.yaml --auth authorization.yaml --infra-json inv.json --cve
